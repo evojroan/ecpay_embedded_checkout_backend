@@ -9,8 +9,8 @@ app.use(express.json());
 app.use(cors());
 
 const MID = {
-  3002607: { HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs" },
-  3003008: { HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13" },
+  3002607: {HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs"},
+  3003008: {HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13"}
 };
 
 //將 Data 加密
@@ -38,6 +38,7 @@ async function getECPayTokens(action, payload) {
         "https://ecpg-stage.ecpay.com.tw/Merchant/GetTokenbyTrade",
         payload
       );
+      console.log(response.data);
       return response.data;
     } catch (err) {
       console.error(err);
@@ -51,7 +52,7 @@ async function getECPayTokens(action, payload) {
 // 取得廠商驗證碼 GetToken(1)：接收前端送來的加密前 Data，加密後再呼叫 API
 app.post("/getTokenbyTrade", async (req, res) => {
   try {
-    const { MerchantID, RqHeader, Data } = req.body;
+    const {MerchantID, RqHeader, Data} = req.body;
     const encryptedData = AESEncrypt(
       Data,
       MID[MerchantID].HashKey,
@@ -60,7 +61,7 @@ app.post("/getTokenbyTrade", async (req, res) => {
     const GetTokenbyTradePayload = {
       MerchantID,
       RqHeader,
-      Data: encryptedData,
+      Data: encryptedData
     };
     const result = await getECPayTokens(
       "getTokenbyTrade",
@@ -69,10 +70,8 @@ app.post("/getTokenbyTrade", async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error("Error in getTokenbyTrade:", error);
-    res.status(500).json({ error: "內部伺服器錯誤" });
+    res.status(500).json({error: "內部伺服器錯誤"});
   }
-
-  
 });
 
 app.listen(port, () => {
