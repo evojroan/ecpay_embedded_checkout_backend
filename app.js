@@ -27,7 +27,7 @@ function AESDecrypt(inputParams, HashKey, HashIV) {
   const decipher = crypto.createDecipheriv(AESAlgorithm, HashKey, HashIV);
   let DecryptedData = decipher.update(inputParams, "base64", "utf8");
   DecryptedData += decipher.final("utf8");
-  return DecryptedData;
+  return JSON.parse(decodeURIComponent(DecryptedData))
 }
 
 //呼叫  ECPay API
@@ -67,7 +67,8 @@ app.post("/getTokenbyTrade", async (req, res) => {
       "getTokenbyTrade",
       GetTokenbyTradePayload
     );
-    res.json(result);
+    const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
+    res.json(decryptedData.Token);
   } catch (error) {
     console.error("Error in getTokenbyTrade:", error);
     res.status(500).json({error: "內部伺服器錯誤"});
