@@ -30,27 +30,38 @@ function AESDecrypt(inputParams, HashKey, HashIV) {
   return JSON.parse(decodeURIComponent(DecryptedData))
 }
 
-//呼叫  ECPay API
-async function getECPayTokens(action, payload) {
-  if (action == "getTokenbyTrade") {
+//呼叫  ECPay API：付款 GetTokenbyTrade
+async function GetECPayTokens(action, payload) {
+  if (action == "GetTokenbyTrade") {
     try {
       const response = await axios.post(
         "https://ecpg-stage.ecpay.com.tw/Merchant/GetTokenbyTrade",
         payload
       );
-      console.log(response.data);
+      console.log("GetTokenByTrade: ",response.data);
       return response.data;
     } catch (err) {
       console.error(err);
       throw err;
     }
   } else if (action == "CreatePayment") {
-    return;
+    try {
+      const response = await axios.post(
+        "https://ecpg-stage.ecpay.com.tw/Merchant/CreatePayment",
+        payload
+      );
+      console.log("CreatePayment: ",response.data);
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   }
 }
 
-// 取得廠商驗證碼 GetToken(1)：接收前端送來的加密前 Data，加密後再呼叫 API
-app.post("/getTokenbyTrade", async (req, res) => {
+
+// 取得廠商驗證碼：接收前端送來的加密前 Data，加密後再呼叫 API (function GetECPayTokens)
+app.post("/GetTokenbyTrade", async (req, res) => {
   try {
     const {MerchantID, RqHeader, Data} = req.body;
     const encryptedData = AESEncrypt(
@@ -63,14 +74,40 @@ app.post("/getTokenbyTrade", async (req, res) => {
       RqHeader,
       Data: encryptedData
     };
-    const result = await getECPayTokens(
-      "getTokenbyTrade",
+    const result = await GetECPayTokens(
+      "GetTokenbyTrade",
       GetTokenbyTradePayload
     );
     const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
     res.json(decryptedData.Token);
   } catch (error) {
-    console.error("Error in getTokenbyTrade:", error);
+    console.error("Error in GetTokenbyTrade:", error);
+    res.status(500).json({error: "內部伺服器錯誤"});
+  }
+});
+
+// 建立付款 CreatePayment：接收前端送來的加密前 Data，加密後再呼叫 API (function GetECPayTokens)
+app.post("/CreatePayment", async (req, res) => {
+  try {
+    const {MerchantID, RqHeader, Data} = req.body;
+    const encryptedData = AESEncrypt(
+      Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
+    const CreatePaymentPayload = {
+      MerchantID,
+      RqHeader,
+      Data: encryptedData
+    };
+    const result = await GetECPayTokens(
+      "CreatePayment",
+      CreatePaymentPayload
+    );
+    const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
+    res.json(decryptedData.Token);
+  } catch (error) {
+    console.error("Error in CreatePayment:", error);
     res.status(500).json({error: "內部伺服器錯誤"});
   }
 });
