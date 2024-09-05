@@ -31,7 +31,7 @@ function AESDecrypt(inputParams, HashKey, HashIV) {
 }
 
 //呼叫  ECPay API：付款 GetTokenbyTrade
-async function GetECPayTokens(action, payload) {
+async function RequestECPayAPIs(action, payload) {
   if (action == "GetTokenbyTrade") {
     try {
       const response = await axios.post(
@@ -60,7 +60,7 @@ async function GetECPayTokens(action, payload) {
 }
 
 
-// 取得廠商驗證碼：接收前端送來的加密前 Data，加密後再呼叫 API (function GetECPayTokens)
+// 加解密：取得廠商驗證碼 GetTokenbyTrade：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/GetTokenbyTrade", async (req, res) => {
   try {
     const {MerchantID, RqHeader, Data} = req.body;
@@ -74,7 +74,7 @@ app.post("/GetTokenbyTrade", async (req, res) => {
       RqHeader,
       Data: encryptedData
     };
-    const result = await GetECPayTokens(
+    const result = await RequestECPayAPIs(
       "GetTokenbyTrade",
       GetTokenbyTradePayload
     );
@@ -86,7 +86,7 @@ app.post("/GetTokenbyTrade", async (req, res) => {
   }
 });
 
-// 建立付款 CreatePayment：接收前端送來的加密前 Data，加密後再呼叫 API (function GetECPayTokens)
+// 加解密：建立付款 CreatePayment：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/CreatePayment", async (req, res) => {
   try {
     const {MerchantID, RqHeader, Data} = req.body;
@@ -100,12 +100,12 @@ app.post("/CreatePayment", async (req, res) => {
       RqHeader,
       Data: encryptedData
     };
-    const result = await GetECPayTokens(
+    const result = await RequestECPayAPIs(
       "CreatePayment",
       CreatePaymentPayload
     );
     const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
-    res.json(decryptedData.Token);
+    res.json(decryptedData);
   } catch (error) {
     console.error("Error in CreatePayment:", error);
     res.status(500).json({error: "內部伺服器錯誤"});
