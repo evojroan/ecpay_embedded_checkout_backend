@@ -9,8 +9,8 @@ app.use(express.json());
 app.use(cors());
 
 const MID = {
-  3002607: {HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs"},
-  3003008: {HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13"}
+  3002607: { HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs" },
+  3003008: { HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13" },
 };
 
 //將 Data 加密
@@ -27,7 +27,7 @@ function AESDecrypt(inputParams, HashKey, HashIV) {
   const decipher = crypto.createDecipheriv(AESAlgorithm, HashKey, HashIV);
   let DecryptedData = decipher.update(inputParams, "base64", "utf8");
   DecryptedData += decipher.final("utf8");
-  return JSON.parse(decodeURIComponent(DecryptedData))
+  return JSON.parse(decodeURIComponent(DecryptedData));
 }
 
 //呼叫  ECPay API：付款 GetTokenbyTrade
@@ -38,7 +38,7 @@ async function RequestECPayAPIs(action, payload) {
         "https://ecpg-stage.ecpay.com.tw/Merchant/GetTokenbyTrade",
         payload
       );
-      console.log("GetTokenByTrade: ",response.data);
+      console.log("GetTokenByTrade: ", response.data);
       return response.data;
     } catch (err) {
       console.error(err);
@@ -50,7 +50,7 @@ async function RequestECPayAPIs(action, payload) {
         "https://ecpg-stage.ecpay.com.tw/Merchant/CreatePayment",
         payload
       );
-      console.log("CreatePayment: ",response.data);
+      console.log("CreatePayment: ", response.data);
       return response.data;
     } catch (err) {
       console.error(err);
@@ -59,11 +59,10 @@ async function RequestECPayAPIs(action, payload) {
   }
 }
 
-
 // 加解密：取得廠商驗證碼 GetTokenbyTrade：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/GetTokenbyTrade", async (req, res) => {
   try {
-    const {MerchantID, RqHeader, Data} = req.body;
+    const { MerchantID, RqHeader, Data } = req.body;
     const encryptedData = AESEncrypt(
       Data,
       MID[MerchantID].HashKey,
@@ -72,24 +71,28 @@ app.post("/GetTokenbyTrade", async (req, res) => {
     const GetTokenbyTradePayload = {
       MerchantID,
       RqHeader,
-      Data: encryptedData
+      Data: encryptedData,
     };
     const result = await RequestECPayAPIs(
       "GetTokenbyTrade",
       GetTokenbyTradePayload
     );
-    const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
+    const decryptedData = AESDecrypt(
+      result.Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
     res.json(decryptedData.Token);
   } catch (error) {
     console.error("Error in GetTokenbyTrade:", error);
-    res.status(500).json({error: "內部伺服器錯誤"});
+    res.status(500).json({ error: "內部伺服器錯誤" });
   }
 });
 
 // 加解密：建立付款 CreatePayment：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/CreatePayment", async (req, res) => {
   try {
-    const {MerchantID, RqHeader, Data} = req.body;
+    const { MerchantID, RqHeader, Data } = req.body;
     const encryptedData = AESEncrypt(
       Data,
       MID[MerchantID].HashKey,
@@ -98,17 +101,37 @@ app.post("/CreatePayment", async (req, res) => {
     const CreatePaymentPayload = {
       MerchantID,
       RqHeader,
-      Data: encryptedData
+      Data: encryptedData,
     };
     const result = await RequestECPayAPIs(
       "CreatePayment",
       CreatePaymentPayload
     );
-    const decryptedData = AESDecrypt(result.Data, MID[MerchantID].HashKey, MID[MerchantID].HashIV);
+    const decryptedData = AESDecrypt(
+      result.Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
     res.json(decryptedData);
   } catch (error) {
     console.error("Error in CreatePayment:", error);
-    res.status(500).json({error: "內部伺服器錯誤"});
+    res.status(500).json({ error: "內部伺服器錯誤" });
+  }
+});
+
+//解密：接收 OrderResultURL 傳來的加密付款結果通知，解密後再回傳給 OrderResultURL
+//2024-09-06 14:00：還不確定這個能否正常運作
+app.post("/OrderResultURLDecrypt", async (req, res) => {
+  try {
+    const decryptedData = AESDecrypt(
+      req,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
+    res.json(decryptedData);
+  } catch (error) {
+    console.error("Error in CreatePayment:", error);
+    res.status(500).json({ error: "內部伺服器錯誤" });
   }
 });
 
