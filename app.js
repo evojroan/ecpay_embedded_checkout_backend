@@ -129,11 +129,8 @@ app.post("/OrderResultURL", async (req, res) => {
     //   MID["MerchantID"].HashIV
     // );
     //res.json(decryptedData);
-    console.log("--------");
-    console.log("REQ=", req);
-    console.log("結果是", req.body);
-    console.log("--------");
-    console.log("回應類型", typeof req.body);
+    console.log(req);
+
     res.json(req.body);
   } catch (error) {
     console.error("Error in CreatePayment:", error);
@@ -146,4 +143,4 @@ app.listen(port, () => {
 });
 
 // 部署到 Vercel 需要增加這一行
-//export default app;
+export default app;
