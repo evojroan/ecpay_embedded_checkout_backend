@@ -3,8 +3,9 @@ import crypto from "crypto";
 import cors from "cors";
 import axios from "axios"; //npm install express crypto cors axios
 const app = express();
-//const port = 3000; //部署到 Vercel 已不需要這行
+const port = 3000; //部署到 Vercel 已不需要這行
 const AESAlgorithm = "aes-128-cbc";
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
@@ -123,34 +124,32 @@ app.post("/CreatePayment", async (req, res) => {
 //OrderResuktURL 功能尚未完成
 app.post("/OrderResultURL", async (req, res) => {
   try {
-    // const decryptedData = AESDecrypt(
-    //   req,
-    //   MID["MerchantID"].HashKey,
-    //   MID["MerchantID"].HashIV
-    // );
-    //res.json(decryptedData);
-    console.log(req);
+     const {MerchantID, Data}=JSON.parse(req.body.ResultData)
+    const decryptedData = AESDecrypt(
+      Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
+    console.log(decryptedData)
+    res.json(decryptedData);
+  
+  
 
-    res.json(req.body);
+    // 在此處處理接收到的資料
+    res.status(200).send('1|OK'); // 確認綠界已成功接收通知
+  
+    //console.log(decryptedData)
   } catch (error) {
     console.error("Error in CreatePayment:", error);
     res.status(500).json({error: "OrderResultURL 錯誤"});
   }
 });
 
-app.post("/test", async (req, res) => {
-  try {
-    console.log("OK-1");
-    res.json({OK: "OK-2"});
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({error: "錯誤"});
-  }
+
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
 
-// app.listen(port, () => {
-//   console.log(`Server running at http://localhost:${port}`);
-// });
-
 // 部署到 Vercel 需要增加這一行
-export default app;
+//export default app;
