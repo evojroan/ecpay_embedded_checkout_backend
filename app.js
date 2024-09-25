@@ -3,14 +3,11 @@ import express from "express";
 import crypto from "crypto";
 import cors from "cors";
 import axios from "axios"; 
-import { WebSocketServer } from "ws";
-import http from 'http';
 
 const app = express();
 const port = 3000; //部署到 Vercel 已不需要這行
 const AESAlgorithm = "aes-128-cbc";
-const server = http.createServer(app); // 創建 HTTP 伺服器
-const wss = new WebSocketServer({ server }); //將 express 交給 SocketServer 開啟 WebSocket 的服務
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -120,6 +117,7 @@ app.post("/CreatePayment", async (req, res) => {
       MID[MerchantID].HashKey,
       MID[MerchantID].HashIV
     );
+   
     res.json(decryptedData);
   } catch (error) {
     console.error("Error in CreatePayment:", error);
@@ -138,37 +136,17 @@ app.post("/OrderResultURL", async (req, res) => {
       MID[MerchantID].HashIV
     );
     console.log(decryptedData);
-    // 通過 WebSocket 廣播 decryptedData 給所有連接的客戶端
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(decryptedData));
-      }
-    });
-
-    res.status(200).send("1|OK");  
+  
   } catch (error) {
     console.error("Error in CreatePayment:", error);
     res.status(500).json({ error: "OrderResultURL 錯誤" });
   }
 });
 
-//WebSocket
-wss.on("connection", (ws) => {
-  console.log("WebSocket 已連接客戶端");
-
-  ws.on("message", (data) => {
-    //對 message 設定監聽，接收從 Client 發送的訊息。data 為 Client 發送的訊息，現在將訊息原封不動發送出去
-    ws.send(data);
-  });
-
-  ws.on("close", () => {
-    console.log("WebSocket 連接結束");
-  });
-});
-
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
 
 // 部署到 Vercel 需要增加這一行
 //export default app;
