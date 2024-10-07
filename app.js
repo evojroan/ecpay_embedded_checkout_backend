@@ -165,18 +165,17 @@ app.get("/api/getOrderResult", (req, res) => {
 //ReturnURL
 app.post("/ReturnURL", async (req, res) => {
   try {
-    const { MerchantID, Data } = JSON.parse(req.body.ResultData);
+     const { MerchantID, Data } = req.body;
     const decryptedData = AESDecrypt(
       Data,
       MID[MerchantID].HashKey,
       MID[MerchantID].HashIV
     );
-  
     console.log(decryptedData)
     res.send("1|OK")
   } catch (error) {
     console.error( error);
-    res.status(500).json({ error: "ReturnURL 錯誤" });
+    res.status(500).json({ error: "ReturnURL 錯誤！" });
   }
 });
 
@@ -188,5 +187,5 @@ app.post("/ReturnURL", async (req, res) => {
 //   console.log(`Server running at http://localhost:${port}`);
 // });
 
-// 部署到 Vercel 需要增加這一行
+ //部署到 Vercel 需要增加這一行
 export default app;
