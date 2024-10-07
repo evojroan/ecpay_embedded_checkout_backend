@@ -4,19 +4,20 @@ import crypto from "crypto";
 import cors from "cors";
 import axios from "axios";
 
+
 const app = express();
 const port = 3000; //部署到 Vercel 已不需要這行
 const AESAlgorithm = "aes-128-cbc";
-const frontendurl =
-  "https://ecpay-embedded-checkout-git-main-evojroans-projects.vercel.app";
+const frontendurl = "ecpay-embedded-checkout.vercel.app";
+//const frontendurl = "http://localhost:3001";
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
 const MID = {
-  3002607: {HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs"},
-  3003008: {HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13"}
+  3002607: { HashKey: "pwFHCqoQZGmho4w6", HashIV: "EkRm7iFT261dpevs" },
+  3003008: { HashKey: "FCnGLNS7P3xQ2q3E", HashIV: "awL5GRWRhyaybq13" },
 };
 
 //將 Data 加密
@@ -44,7 +45,7 @@ async function RequestECPayAPIs(action, payload) {
         "https://ecpg-stage.ecpay.com.tw/Merchant/GetTokenbyTrade",
         payload
       );
-      console.log("GetTokenByTrade: ", response.data);
+
       return response.data;
     } catch (err) {
       console.error(err);
@@ -56,7 +57,7 @@ async function RequestECPayAPIs(action, payload) {
         "https://ecpg-stage.ecpay.com.tw/Merchant/CreatePayment",
         payload
       );
-      console.log("CreatePayment: ", response.data);
+
       return response.data;
     } catch (err) {
       console.error(err);
@@ -68,7 +69,7 @@ async function RequestECPayAPIs(action, payload) {
 // 加解密：取得廠商驗證碼 GetTokenbyTrade：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/GetTokenbyTrade", async (req, res) => {
   try {
-    const {MerchantID, RqHeader, Data} = req.body;
+    const { MerchantID, RqHeader, Data } = req.body;
     const encryptedData = AESEncrypt(
       Data,
       MID[MerchantID].HashKey,
@@ -77,7 +78,7 @@ app.post("/GetTokenbyTrade", async (req, res) => {
     const GetTokenbyTradePayload = {
       MerchantID,
       RqHeader,
-      Data: encryptedData
+      Data: encryptedData,
     };
     const result = await RequestECPayAPIs(
       "GetTokenbyTrade",
@@ -91,14 +92,14 @@ app.post("/GetTokenbyTrade", async (req, res) => {
     res.json(decryptedData.Token);
   } catch (error) {
     console.error("Error in GetTokenbyTrade:", error);
-    res.status(500).json({error: "內部伺服器錯誤"});
+    res.status(500).json({ error: "內部伺服器錯誤" });
   }
 });
 
 // 加解密：建立付款 CreatePayment：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/CreatePayment", async (req, res) => {
   try {
-    const {MerchantID, RqHeader, Data} = req.body;
+    const { MerchantID, RqHeader, Data } = req.body;
     const encryptedData = AESEncrypt(
       Data,
       MID[MerchantID].HashKey,
@@ -107,7 +108,7 @@ app.post("/CreatePayment", async (req, res) => {
     const CreatePaymentPayload = {
       MerchantID,
       RqHeader,
-      Data: encryptedData
+      Data: encryptedData,
     };
     const result = await RequestECPayAPIs(
       "CreatePayment",
@@ -122,47 +123,66 @@ app.post("/CreatePayment", async (req, res) => {
     res.json(decryptedData);
   } catch (error) {
     console.error("Error in CreatePayment:", error);
-    res.status(500).json({error: "內部伺服器錯誤"});
+    res.status(500).json({ error: "內部伺服器錯誤" });
   }
 });
 
-//解密：接收 OrderResultURL 傳來的加密付款結果通知，解密後再回傳給 OrderResultURL
+//OrderResultURL：接收付款結果通知並解密，網址導轉至前端
 const OrderResult = {};
 app.post("/OrderResultURL", async (req, res) => {
   try {
-    const {MerchantID, Data} = JSON.parse(req.body.ResultData);
+    const { MerchantID, Data } = JSON.parse(req.body.ResultData);
     const decryptedData = AESDecrypt(
       Data,
       MID[MerchantID].HashKey,
       MID[MerchantID].HashIV
     );
-    console.log(decryptedData);
     const MerchantTradeNo = decryptedData.OrderInfo.MerchantTradeNo;
-    console.log("MerchantTradeNo=", MerchantTradeNo);
     OrderResult[MerchantTradeNo] = decryptedData;
 
-    // 重定向到前端頁面，附帶訂單編號
+    // 重轉址到前端頁面，附帶訂單編號
     res.redirect(
-      //      `http://localhost:5173/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
+     
       `${frontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
     );
   } catch (error) {
     console.error("Error in CreatePayment:", error);
-    res.status(500).json({error: "OrderResultURL 錯誤"});
+    res.status(500).json({ error: "OrderResultURL 錯誤" });
   }
 });
 
 // 提供給前端獲取付款結果的 API
 app.get("/api/getOrderResult", (req, res) => {
   const MerchantTradeNo = req.query.MerchantTradeNo;
-  const OderResultPayload = OrderResult[MerchantTradeNo];
+  const OrderResultPayload = OrderResult[MerchantTradeNo];
 
-  if (OderResultPayload) {
-    res.json(OderResultPayload);
+  if (OrderResultPayload) {
+    res.json(OrderResultPayload);
   } else {
-    res.status(404).json({error: "找不到付款結果"});
+    res.status(404).json({ error: "找不到付款結果" });
   }
 });
+
+//ReturnURL
+app.post("/ReturnURL", async (req, res) => {
+  try {
+    const { MerchantID, Data } = JSON.parse(req.body.ResultData);
+    const decryptedData = AESDecrypt(
+      Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
+  
+    console.log(decryptedData)
+    res.send("1|OK")
+  } catch (error) {
+    console.error( error);
+    res.status(500).json({ error: "ReturnURL 錯誤" });
+  }
+});
+
+
+
 
 //部署到 Vercel 取消這段
 // app.listen(port, () => {
