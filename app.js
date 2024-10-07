@@ -8,7 +8,7 @@ import axios from "axios";
 const app = express();
 const port = 3000; //部署到 Vercel 已不需要這行
 const AESAlgorithm = "aes-128-cbc";
-const frontendurl = "ecpay-embedded-checkout.vercel.app";
+const frontendurl = "https://ecpay-embedded-checkout.vercel.app";
 //const frontendurl = "http://localhost:3001";
 
 app.use(express.urlencoded({ extended: true }));
@@ -142,7 +142,6 @@ app.post("/OrderResultURL", async (req, res) => {
 
     // 重轉址到前端頁面，附帶訂單編號
     res.redirect(
-     
       `${frontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
     );
   } catch (error) {
