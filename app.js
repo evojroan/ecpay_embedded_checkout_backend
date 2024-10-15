@@ -131,6 +131,7 @@ app.post("/CreatePayment", async (req, res) => {
 const OrderResult = {};
 app.post("/OrderResultURL", async (req, res) => {
   try {
+    console.log(req.body)
     const { MerchantID, Data } = JSON.parse(req.body.ResultData);
     const decryptedData = AESDecrypt(
       Data,
