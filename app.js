@@ -66,6 +66,11 @@ async function RequestECPayAPIs(action, payload) {
   }
 }
 
+//Apple Pay 憑證驗證
+app.get('/.well-known/apple-developer-merchantid-domain-association', (req, res) => {
+  res.sendFile(path.join(__dirname, '.well-known', 'apple-developer-merchantid-domain-association'));
+});
+
 // 加解密：取得廠商驗證碼 GetTokenbyTrade：接收前端送來的加密前 Data，加密後再呼叫 API (async function RequestECPayAPIs)
 app.post("/GetTokenbyTrade", async (req, res) => {
   try {
