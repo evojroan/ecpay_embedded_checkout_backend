@@ -10,10 +10,7 @@
       {
         "src": "/(.*)",
         "dest": "app.js" 
-      },
-      {
-        "src": "/.well-known/apple-developer-merchantid-domain-association",
-        "dest": "/.well-known/apple-developer-merchantid-domain-association"
       }
+    
     ]
   }
