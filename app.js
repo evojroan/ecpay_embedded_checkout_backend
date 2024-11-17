@@ -7,8 +7,8 @@ import axios from "axios";
 const app = express();
 const port = 3000; //部署到 Vercel 已不需要這行
 const AESAlgorithm = "aes-128-cbc";
-const frontendurl = "https://couple-choco.vercel.app";
-//const frontendurl = "https://ecpay-embedded-checkout.vercel.app";
+const CCfrontendurl = "https://couple-choco.vercel.app";
+const frontendurl = "https://ecpay-embedded-checkout.vercel.app";
 //const frontendurl = "http://localhost:3001";
 
 app.use(express.urlencoded({extended: true}));
@@ -127,7 +127,7 @@ app.post("/CreatePayment", async (req, res) => {
   }
 });
 
-//OrderResultURL：接收付款結果通知並解密，網址導轉至前端
+//OrderResultURL(原示範)：接收付款結果通知並解密，網址導轉至前端
 const OrderResult = {};
 app.post("/OrderResultURL", async (req, res) => {
   try {
@@ -143,7 +143,30 @@ app.post("/OrderResultURL", async (req, res) => {
 
     // 重轉址到前端頁面，附帶訂單編號
     res.redirect(
-      `${frontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
+      `${CCfrontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
+    );
+  } catch (error) {
+    console.error("Error in CreatePayment:", error);
+    res.status(500).json({error: "OrderResultURL 錯誤"});
+  }
+});
+
+//OrderResultURL(Couple Choco)：接收付款結果通知並解密，網址導轉至前端
+app.post("/CCOrderResultURL", async (req, res) => {
+  try {
+    console.log(req.body);
+    const {MerchantID, Data} = JSON.parse(req.body.ResultData);
+    const decryptedData = AESDecrypt(
+      Data,
+      MID[MerchantID].HashKey,
+      MID[MerchantID].HashIV
+    );
+    const MerchantTradeNo = decryptedData.OrderInfo.MerchantTradeNo;
+    OrderResult[MerchantTradeNo] = decryptedData;
+
+    // 重轉址到前端頁面，附帶訂單編號
+    res.redirect(
+      `${frontendurl}/CCOrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
     );
   } catch (error) {
     console.error("Error in CreatePayment:", error);
@@ -181,9 +204,9 @@ app.post("/ReturnURL", async (req, res) => {
 });
 
 //部署到 Vercel 取消這段
-// app.listen(port, () => {
-//   console.log(`Server running at http://localhost:${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
 
 //部署到 Vercel 需要增加這一行
-export default app;
+//export default app;
