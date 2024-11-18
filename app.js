@@ -148,7 +148,7 @@ app.post("/OrderResultURL", async (req, res) => {
 
     // 重轉址到前端頁面，附帶訂單編號
     res.redirect(
-      `${CCfrontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
+      `${frontendurl}/OrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
     );
   } catch (error) {
     console.error("Error in CreatePayment:", error);
@@ -171,7 +171,7 @@ app.post("/CCOrderResultURL", async (req, res) => {
 
     // 重轉址到前端頁面，附帶訂單編號
     res.redirect(
-      `${frontendurl}/CCOrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
+      `${CCfrontendurl}/CCOrderResultURL?MerchantTradeNo=${MerchantTradeNo}`
     );
   } catch (error) {
     console.error("Error in CreatePayment:", error);
